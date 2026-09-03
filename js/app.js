@@ -41,7 +41,8 @@ function aoDesbloquearPin(){
     })
     .catch(err => {
       console.error('Erro ao conectar no Firebase:', err);
-      mostrarErroConexao('Não foi possível conectar ao banco de dados. Verifique sua internet ou a configuração do Firebase (vendas/js/firebase-config.js) e tente de novo.');
+      const detalhe = err && (err.code || err.message) ? ` (${err.code || ''} ${err.message || ''})`.trim() : '';
+      mostrarErroConexao(`Não foi possível conectar ao banco de dados${detalhe}. Verifique a configuração do Firebase e tente de novo.`);
     });
 }
 
