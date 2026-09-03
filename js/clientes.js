@@ -83,6 +83,8 @@ function renderDetalheCliente(){
 }
 
 function ligarEventosClientes(){
+  aplicarMascaraTelefone(document.getElementById('cTelefone'));
+
   document.getElementById('btnNovoCliente').addEventListener('click', () => abrirFormCliente(null));
   document.getElementById('btnCancelarCliente').addEventListener('click', fecharFormCliente);
   document.getElementById('clienteBusca').addEventListener('input', renderClientes);
