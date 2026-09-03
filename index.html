@@ -3,655 +3,287 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rotas Motoboy — Protótipo</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-<style>
-  :root{
-    --navy:#0B1F3A;
-    --navy2:#122A4D;
-    --yellow:#F5C518;
-    --red:#E23744;
-    --gray:#7A8699;
-    --line:#22314F;
-    --bg:#0B1F3A;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Inter', -apple-system, sans-serif;
-    background:var(--bg);
-    color:#fff;
-    min-height:100vh;
-  }
-  header{
-    padding:18px 16px 14px;
-    background:var(--navy2);
-    border-bottom:2px solid var(--yellow);
-    position:sticky;
-    top:0;
-    z-index:10;
-  }
-  header h1{
-    margin:0;
-    font-size:18px;
-    letter-spacing:.3px;
-  }
-  header h1 span{color:var(--yellow);}
-  header p{
-    margin:4px 0 0;
-    font-size:12.5px;
-    color:var(--gray);
-  }
-  #map{
-    height:260px;
-    width:100%;
-    filter:saturate(0.9);
-  }
-  main{
-    padding:16px;
-    max-width:520px;
-    margin:0 auto;
-  }
-  .card{
-    background:var(--navy2);
-    border:1px solid var(--line);
-    border-radius:14px;
-    padding:14px;
-    margin-bottom:14px;
-  }
-  .add-row{
-    display:flex;
-    gap:8px;
-  }
-  input[type=text]{
-    flex:1;
-    padding:12px 12px;
-    border-radius:10px;
-    border:1px solid var(--line);
-    background:#0E2340;
-    color:#fff;
-    font-size:15px;
-  }
-  input[type=text]::placeholder{color:var(--gray);}
-  button{
-    border:none;
-    border-radius:10px;
-    font-weight:700;
-    cursor:pointer;
-    font-size:14px;
-  }
-  .btn-add{
-    background:var(--yellow);
-    color:var(--navy);
-    padding:0 18px;
-  }
-  .btn-primary{
-    width:100%;
-    background:var(--red);
-    color:#fff;
-    padding:13px;
-    margin-top:10px;
-    font-size:15px;
-  }
-  .btn-primary:disabled{
-    opacity:0.4;
-    cursor:not-allowed;
-  }
-  .btn-secondary{
-    width:100%;
-    background:transparent;
-    color:var(--gray);
-    border:1px solid var(--line);
-    padding:10px;
-    margin-top:8px;
-  }
-  ul#lista{
-    list-style:none;
-    margin:12px 0 0;
-    padding:0;
-  }
-  li.stop{
-    display:flex;
-    align-items:flex-start;
-    gap:10px;
-    padding:10px 0;
-    border-bottom:1px solid var(--line);
-  }
-  li.stop:last-child{border-bottom:none;}
-  .ordem{
-    background:var(--yellow);
-    color:var(--navy);
-    width:24px;
-    height:24px;
-    min-width:24px;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:12px;
-    font-weight:800;
-    margin-top:1px;
-  }
-  .stop-info{flex:1;}
-  .stop-info .end{font-size:14px;}
-  .stop-info .meta{font-size:11.5px;color:var(--gray);margin-top:2px;}
-  .del{
-    background:none;
-    color:var(--gray);
-    font-size:18px;
-    padding:0 4px;
-  }
-  .empty{
-    color:var(--gray);
-    font-size:13.5px;
-    text-align:center;
-    padding:18px 0;
-  }
-  .status{
-    font-size:12.5px;
-    color:var(--yellow);
-    margin-top:8px;
-    min-height:16px;
-  }
-  .resumo{
-    display:flex;
-    justify-content:space-between;
-    font-size:13px;
-    color:var(--gray);
-    margin-top:10px;
-    padding-top:10px;
-    border-top:1px solid var(--line);
-  }
-  .resumo b{color:#fff;}
-  .cfg{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    font-size:12.5px;
-    color:var(--gray);
-    cursor:pointer;
-  }
-  .cfg b{color:var(--yellow);}
-  .cfg-body{
-    margin-top:10px;
-    display:none;
-  }
-  .cfg-body.aberto{display:block;}
-  .cfg-body p{
-    font-size:11.5px;
-    color:var(--gray);
-    margin:0 0 8px;
-    line-height:1.5;
-  }
-  .cfg-body a{color:var(--yellow);}
-  .cfg-row{
-    display:flex;
-    gap:8px;
-  }
-  .btn-save{
-    background:var(--yellow);
-    color:var(--navy);
-    padding:0 16px;
-  }
-</style>
+<title>Painel de Vendas</title>
+<link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
 <header>
-  <h1>Rotas <span>Motoboy</span></h1>
-  <p>Adicione os endereços das entregas e otimize o trajeto</p>
+  <h1>Painel de <span>Vendas</span></h1>
+  <p>Estoque, PDV, clientes e relatórios em um só lugar</p>
+  <nav class="tabs" id="tabs">
+    <button type="button" class="tab active" data-view="dashboard">📊 <span>Dashboard</span></button>
+    <button type="button" class="tab" data-view="produtos">📦 <span>Produtos</span></button>
+    <button type="button" class="tab" data-view="pdv">🛒 <span>PDV</span></button>
+    <button type="button" class="tab" data-view="clientes">👤 <span>Clientes</span></button>
+    <button type="button" class="tab" data-view="estoque">🔄 <span>Estoque</span></button>
+    <button type="button" class="tab" data-view="relatorios">📈 <span>Relatórios</span></button>
+  </nav>
 </header>
-
-<div id="map"></div>
 
 <main>
 
-  <div class="card">
-    <div class="cfg" id="cfgLojaToggle">
-      <span>📍 Endereço de saída (loja)</span>
-      <span id="cfgLojaStatus">Não configurado</span>
+  <!-- ===== DASHBOARD ===== -->
+  <section id="view-dashboard" class="view active">
+    <div class="grid-cards" id="dashCards"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>📈 Faturamento por período</h2>
+        <select id="dashPeriodo">
+          <option value="7">Últimos 7 dias</option>
+          <option value="30">Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+        </select>
+      </div>
+      <div id="dashFaturamento"></div>
     </div>
-    <div class="cfg-body" id="cfgLojaBody">
-      <p>Todas as rotas vão partir sempre desse endereço, em vez do GPS do motoboy.</p>
-      <div class="cfg-row">
-        <input type="text" id="inputLoja" placeholder="Ex: Rua tal, 123, Parque São Bernardo, SBC" />
-        <button class="btn-save" id="btnSaveLoja">Salvar</button>
+
+    <div class="card">
+      <h2>🏆 Produtos mais vendidos</h2>
+      <div id="dashMaisVendidos"></div>
+    </div>
+  </section>
+
+  <!-- ===== PRODUTOS / ESTOQUE ===== -->
+  <section id="view-produtos" class="view">
+    <div class="card">
+      <div class="add-row">
+        <input type="text" id="produtoBusca" autocomplete="off" placeholder="Buscar por nome, SKU ou categoria" />
+        <button class="btn-add" id="btnNovoProduto" aria-label="Novo produto">+</button>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="cfg" id="cfgToggle">
-      <span>⚙ Configuração da busca de endereço</span>
-      <span id="cfgStatus">Não configurado</span>
+    <div class="card" id="formProdutoCard" style="display:none;">
+      <h2 id="formProdutoTitulo">Novo produto</h2>
+      <form id="formProduto">
+        <input type="hidden" id="produtoId" />
+        <div class="form-grid">
+          <label>Nome<input type="text" id="pNome" required /></label>
+          <label>Código/SKU<input type="text" id="pSku" /></label>
+          <label>Categoria<input type="text" id="pCategoria" /></label>
+          <label>Marca<input type="text" id="pMarca" /></label>
+          <label>Fornecedor<input type="text" id="pFornecedor" /></label>
+          <label>Foto (URL)<input type="text" id="pFoto" placeholder="https://..." /></label>
+          <label>Custo (R$)<input type="number" id="pCusto" step="0.01" min="0" /></label>
+          <label>Preço de venda (R$)<input type="number" id="pPreco" step="0.01" min="0" /></label>
+          <label>Estoque mínimo<input type="number" id="pEstoqueMinimo" step="1" min="0" /></label>
+        </div>
+
+        <h3>Variações (cor / tamanho / estoque)</h3>
+        <p class="hint">Cadastre uma linha por combinação de cor e tamanho. Deixe cor/tamanho em branco se o produto não tiver variação.</p>
+        <div id="variacoesLista"></div>
+        <button type="button" class="btn-secondary" id="btnAddVariacao">+ Adicionar variação</button>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Salvar produto</button>
+          <button type="button" class="btn-secondary" id="btnCancelarProduto">Cancelar</button>
+        </div>
+      </form>
     </div>
-    <div class="cfg-body" id="cfgBody">
-      <p>
-        Cole abaixo sua chave grátis do LocationIQ. Pra gerar uma:
-        acesse <a href="https://locationiq.com/register" target="_blank">locationiq.com/register</a>,
-        crie a conta e copie a "Access Token" do painel.
-      </p>
-      <div class="cfg-row">
-        <input type="text" id="inputKey" placeholder="Cole sua Access Token aqui" />
-        <button class="btn-save" id="btnSaveKey">Salvar</button>
+
+    <div id="produtosLista"></div>
+    <div id="produtosVazio" class="empty" style="display:none;">Nenhum produto cadastrado ainda.</div>
+  </section>
+
+  <!-- ===== PDV ===== -->
+  <section id="view-pdv" class="view">
+    <div class="card">
+      <div class="add-row">
+        <input type="text" id="pdvBusca" autocomplete="off" placeholder="Buscar produto ou ler código de barras (SKU) + Enter" />
+      </div>
+      <div id="pdvSugestoes" class="sugestoes"></div>
+    </div>
+
+    <div class="card">
+      <table class="tabela" id="pdvCarrinhoTabela">
+        <thead>
+          <tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Subtotal</th><th></th></tr>
+        </thead>
+        <tbody id="pdvCarrinhoCorpo"></tbody>
+      </table>
+      <div id="pdvCarrinhoVazio" class="empty">Carrinho vazio.</div>
+
+      <div class="form-grid">
+        <label>Cliente
+          <select id="pdvCliente"><option value="">Consumidor não identificado</option></select>
+        </label>
+        <label>Vendedor
+          <input type="text" id="pdvVendedor" placeholder="Seu nome" />
+        </label>
+        <label>Desconto (R$)
+          <input type="number" id="pdvDesconto" step="0.01" min="0" value="0" />
+        </label>
+        <label>Forma de pagamento
+          <select id="pdvPagamento"></select>
+        </label>
+      </div>
+
+      <div class="resumo" id="pdvResumo">
+        <span>Subtotal: <b id="pdvSubtotal">R$ 0,00</b></span>
+        <span>Total: <b id="pdvTotal">R$ 0,00</b></span>
+      </div>
+
+      <button class="btn-primary" id="btnFinalizarVenda" disabled>Finalizar venda</button>
+      <button class="btn-secondary" id="btnLimparCarrinho">Limpar carrinho</button>
+      <div class="status" id="pdvStatus" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- ===== CLIENTES ===== -->
+  <section id="view-clientes" class="view">
+    <div class="card">
+      <div class="add-row">
+        <input type="text" id="clienteBusca" autocomplete="off" placeholder="Buscar por nome ou telefone" />
+        <button class="btn-add" id="btnNovoCliente" aria-label="Novo cliente">+</button>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="add-row">
-      <input type="text" id="inputEndereco" placeholder="Ex: Rua Marechal Deodoro, 200, São Bernardo do Campo" />
-      <button class="btn-add" id="btnAdd">+</button>
-    </div>
-    <div class="status" id="status"></div>
-  </div>
-
-  <div class="card">
-    <ul id="lista"></ul>
-    <div id="vazio" class="empty">Nenhum endereço adicionado ainda.</div>
-
-    <button class="btn-primary" id="btnOtimizar" disabled>Otimizar rota</button>
-    <button class="btn-secondary" id="btnLimpar">Limpar todos</button>
-
-    <div class="resumo" id="resumo" style="display:none;">
-      <span>Distância total: <b id="distTotal">-</b></span>
-      <span>Tempo estimado: <b id="tempoTotal">-</b></span>
+    <div class="card" id="formClienteCard" style="display:none;">
+      <h2 id="formClienteTitulo">Novo cliente</h2>
+      <form id="formCliente">
+        <input type="hidden" id="clienteId" />
+        <div class="form-grid">
+          <label>Nome<input type="text" id="cNome" required /></label>
+          <label>Telefone<input type="text" id="cTelefone" /></label>
+          <label>CPF (opcional)<input type="text" id="cCpf" /></label>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Salvar cliente</button>
+          <button type="button" class="btn-secondary" id="btnCancelarCliente">Cancelar</button>
+        </div>
+      </form>
     </div>
 
-    <div id="iniciarRow" style="display:none; gap:8px; margin-top:10px;">
-      <button class="btn-primary" id="btnGoogleMaps" style="background:#1a73e8;">Iniciar no Google Maps</button>
+    <div id="clientesLista"></div>
+    <div id="clientesVazio" class="empty" style="display:none;">Nenhum cliente cadastrado ainda.</div>
+
+    <div class="card" id="clienteDetalheCard" style="display:none;">
+      <button type="button" class="btn-secondary" id="btnFecharDetalheCliente">← Voltar</button>
+      <div id="clienteDetalhe"></div>
     </div>
-    <div id="iniciarRow2" style="display:none; margin-top:8px;">
-      <button class="btn-primary" id="btnWaze" style="background:#33ccff; color:#0B1F3A;">Iniciar no Waze</button>
+  </section>
+
+  <!-- ===== MOVIMENTAÇÕES DE ESTOQUE ===== -->
+  <section id="view-estoque" class="view">
+    <div class="card">
+      <h2>Registrar movimentação</h2>
+      <form id="formMovimentacao">
+        <div class="form-grid">
+          <label>Tipo
+            <select id="movTipo">
+              <option value="entrada">Entrada de mercadoria</option>
+              <option value="devolucao">Devolução</option>
+              <option value="ajuste">Ajuste</option>
+              <option value="perda">Perda</option>
+              <option value="troca">Troca</option>
+            </select>
+          </label>
+          <label>Produto
+            <select id="movProduto"></select>
+          </label>
+          <label>Variação
+            <select id="movVariacao"></select>
+          </label>
+          <label id="movQtdLabel">Quantidade
+            <input type="number" id="movQtd" step="1" />
+          </label>
+        </div>
+
+        <div id="movTrocaExtra" style="display:none;">
+          <h3>Produto de entrada (troca)</h3>
+          <div class="form-grid">
+            <label>Produto
+              <select id="movProdutoNovo"></select>
+            </label>
+            <label>Variação
+              <select id="movVariacaoNovo"></select>
+            </label>
+          </div>
+        </div>
+
+        <label>Observação<input type="text" id="movObs" placeholder="Opcional" /></label>
+        <button type="submit" class="btn-primary">Registrar</button>
+        <div class="status" id="movStatus" role="status" aria-live="polite"></div>
+      </form>
     </div>
-  </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Histórico</h2>
+        <select id="movFiltroTipo">
+          <option value="">Todos os tipos</option>
+          <option value="entrada">Entrada</option>
+          <option value="venda">Venda</option>
+          <option value="devolucao">Devolução</option>
+          <option value="ajuste">Ajuste</option>
+          <option value="perda">Perda</option>
+          <option value="troca">Troca</option>
+        </select>
+      </div>
+      <div id="movLista"></div>
+      <div id="movVazio" class="empty" style="display:none;">Nenhuma movimentação registrada ainda.</div>
+    </div>
+  </section>
+
+  <!-- ===== RELATÓRIOS ===== -->
+  <section id="view-relatorios" class="view">
+    <div class="card">
+      <div class="card-header">
+        <h2>Período</h2>
+        <select id="relPeriodo">
+          <option value="7">Últimos 7 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+          <option value="9999">Tudo</option>
+        </select>
+      </div>
+      <div class="grid-cards" id="relResumo"></div>
+    </div>
+
+    <div class="card">
+      <h2>Vendas por dia</h2>
+      <div id="relPorDia"></div>
+    </div>
+
+    <div class="card">
+      <h2>🏆 Produtos mais vendidos</h2>
+      <div id="relMaisVendidos"></div>
+    </div>
+
+    <div class="card">
+      <h2>🐌 Produtos parados (30 dias sem venda)</h2>
+      <div id="relParados"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚠️ Estoque baixo</h2>
+      <div id="relEstoqueBaixo"></div>
+    </div>
+
+    <div class="card">
+      <h2>💳 Vendas por forma de pagamento</h2>
+      <div id="relPorPagamento"></div>
+    </div>
+
+    <div class="card">
+      <h2>🧑‍💼 Vendas por vendedor</h2>
+      <div id="relPorVendedor"></div>
+    </div>
+  </section>
 
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-<script>
-const STORAGE_KEY = 'motoboy_paradas_v1';
-let paradas = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-let origem = null; // {lat, lon} - localização do motoboy
-let map, markersLayer, routeLine;
-
-function salvar(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(paradas));
-}
-
-function setStatus(msg, isError){
-  const el = document.getElementById('status');
-  el.textContent = msg || '';
-  el.style.color = isError ? '#E23744' : '#F5C518';
-}
-
-// ---- Mapa ----
-function initMap(){
-  map = L.map('map', { zoomControl:false }).setView([-23.69, -46.56], 13);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO'
-  }).addTo(map);
-  markersLayer = L.layerGroup().addTo(map);
-}
-
-function corMarcador(cor){
-  return L.divIcon({
-    html: `<div style="background:${cor};width:16px;height:16px;border-radius:50%;border:2px solid #fff;"></div>`,
-    className:'',
-    iconSize:[16,16]
-  });
-}
-
-function redesenharMapa(){
-  markersLayer.clearLayers();
-  if(routeLine){ map.removeLayer(routeLine); routeLine = null; }
-
-  const pontos = [];
-
-  if(origem){
-    L.marker([origem.lat, origem.lon], {icon: corMarcador('#F5C518')})
-      .addTo(markersLayer).bindPopup(origem.label || 'Ponto de partida');
-    pontos.push([origem.lat, origem.lon]);
-  }
-
-  paradas.forEach((p, i) => {
-    if(p.lat && p.lon){
-      L.marker([p.lat, p.lon], {icon: corMarcador('#E23744')})
-        .addTo(markersLayer)
-        .bindPopup(`${i+1}. ${p.endereco}`);
-      pontos.push([p.lat, p.lon]);
-    }
-  });
-
-  if(pontos.length){
-    map.fitBounds(pontos, {padding:[30,30]});
-  }
-}
-
-// ---- Endereço de saída fixo (loja) ----
-const LOJA_STORAGE = 'motoboy_loja_v1';
-
-function pegarLoja(){
-  const raw = localStorage.getItem(LOJA_STORAGE);
-  return raw ? JSON.parse(raw) : null;
-}
-
-function atualizarCfgLojaStatus(){
-  const el = document.getElementById('cfgLojaStatus');
-  const loja = pegarLoja();
-  el.textContent = loja ? 'Configurado ✓' : 'Não configurado';
-  el.style.color = loja ? '#8FD19E' : 'var(--gray)';
-  document.getElementById('inputLoja').value = loja ? loja.endereco : '';
-}
-
-document.getElementById('cfgLojaToggle').addEventListener('click', () => {
-  document.getElementById('cfgLojaBody').classList.toggle('aberto');
-});
-
-document.getElementById('btnSaveLoja').addEventListener('click', async () => {
-  const texto = document.getElementById('inputLoja').value.trim();
-  if(!texto) return;
-  setStatus('Localizando endereço da loja...');
-  try{
-    const geo = await geocodificar(texto);
-    if(!geo){
-      setStatus('Não encontramos esse endereço. Tente incluir bairro e número.', true);
-      return;
-    }
-    localStorage.setItem(LOJA_STORAGE, JSON.stringify({ endereco: texto, lat: geo.lat, lon: geo.lon }));
-    atualizarCfgLojaStatus();
-    setStatus('Endereço da loja salvo.');
-    document.getElementById('cfgLojaBody').classList.remove('aberto');
-    redesenharMapa();
-  } catch(err){
-    if(err.message === 'SEM_KEY'){
-      setStatus('Configure a chave de busca de endereço antes.', true);
-      document.getElementById('cfgBody').classList.add('aberto');
-    } else {
-      setStatus('Erro: ' + err.message, true);
-      console.error(err);
-    }
-  }
-});
-
-// ---- Configuração da API key (LocationIQ) ----
-const KEY_STORAGE = 'motoboy_locationiq_key';
-const DEFAULT_KEY = 'pk.15d5066f095a40efcec6e71a4727d7d2';
-
-function pegarKey(){
-  return localStorage.getItem(KEY_STORAGE) || '';
-}
-
-function garantirKeyPadrao(){
-  if(!pegarKey()){
-    localStorage.setItem(KEY_STORAGE, DEFAULT_KEY);
-  }
-}
-
-function atualizarCfgStatus(){
-  const el = document.getElementById('cfgStatus');
-  const key = pegarKey();
-  el.textContent = key ? 'Configurado ✓' : 'Não configurado';
-  el.style.color = key ? '#8FD19E' : 'var(--gray)';
-  document.getElementById('inputKey').value = key;
-}
-
-document.getElementById('cfgToggle').addEventListener('click', () => {
-  document.getElementById('cfgBody').classList.toggle('aberto');
-});
-
-document.getElementById('btnSaveKey').addEventListener('click', () => {
-  const key = document.getElementById('inputKey').value.trim();
-  if(!key){ return; }
-  localStorage.setItem(KEY_STORAGE, key);
-  atualizarCfgStatus();
-  setStatus('Chave salva. Já pode adicionar endereços.');
-  document.getElementById('cfgBody').classList.remove('aberto');
-});
-
-// ---- Geocodificação via LocationIQ (dados OpenStreetMap, sem os bloqueios do Nominatim público) ----
-async function geocodificar(endereco){
-  const key = pegarKey();
-  if(!key){
-    throw new Error('SEM_KEY');
-  }
-  const url = `https://us1.locationiq.com/v1/search?key=${key}&format=json&limit=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
-  let res;
-  try{
-    res = await fetch(url);
-  } catch(networkErr){
-    throw new Error('REDE: ' + networkErr.message);
-  }
-  if(res.status === 401 || res.status === 403){
-    throw new Error('KEY_INVALIDA');
-  }
-  if(!res.ok){
-    throw new Error('HTTP_' + res.status);
-  }
-  const data = await res.json();
-  if(!Array.isArray(data) || !data.length) return null;
-  return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon), display: data[0].display_name };
-}
-
-async function pegarLocalizacaoAtual(){
-  return new Promise((resolve) => {
-    if(!navigator.geolocation){ resolve(null); return; }
-    navigator.geolocation.getCurrentPosition(
-      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      () => resolve(null),
-      { enableHighAccuracy:true, timeout:6000 }
-    );
-  });
-}
-
-// ---- Renderizar lista ----
-function renderLista(){
-  const ul = document.getElementById('lista');
-  const vazio = document.getElementById('vazio');
-  ul.innerHTML = '';
-
-  if(paradas.length === 0){
-    vazio.style.display = 'block';
-  } else {
-    vazio.style.display = 'none';
-  }
-
-  paradas.forEach((p, i) => {
-    const li = document.createElement('li');
-    li.className = 'stop';
-    li.innerHTML = `
-      <div class="ordem">${i+1}</div>
-      <div class="stop-info">
-        <div class="end">${p.endereco}</div>
-        <div class="meta">${p.lat ? 'Localizado' : 'Endereço não encontrado'}</div>
-      </div>
-      <button class="del" data-i="${i}">✕</button>
-    `;
-    ul.appendChild(li);
-  });
-
-  document.querySelectorAll('.del').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const i = parseInt(e.target.dataset.i);
-      paradas.splice(i, 1);
-      salvar();
-      renderLista();
-      redesenharMapa();
-      atualizarBotaoOtimizar();
-      document.getElementById('resumo').style.display = 'none';
-      document.getElementById('iniciarRow').style.display = 'none';
-      document.getElementById('iniciarRow2').style.display = 'none';
-    });
-  });
-
-  atualizarBotaoOtimizar();
-}
-
-function atualizarBotaoOtimizar(){
-  document.getElementById('btnOtimizar').disabled = paradas.length < 2;
-}
-
-// ---- Adicionar endereço ----
-async function adicionarEndereco(){
-  const input = document.getElementById('inputEndereco');
-  const texto = input.value.trim();
-  if(!texto) return;
-
-  setStatus('Localizando endereço...');
-  document.getElementById('btnAdd').disabled = true;
-
-  try{
-    const geo = await geocodificar(texto + ', São Bernardo do Campo, SP');
-    if(!geo){
-      setStatus('Não encontramos esse endereço. Tente incluir bairro e número.', true);
-    } else {
-      paradas.push({ endereco: texto, lat: geo.lat, lon: geo.lon });
-      salvar();
-      renderLista();
-      redesenharMapa();
-      input.value = '';
-      setStatus('Endereço adicionado.');
-    }
-  } catch(err){
-    if(err.message === 'SEM_KEY'){
-      setStatus('Configure a chave de busca de endereço acima antes de adicionar.', true);
-      document.getElementById('cfgBody').classList.add('aberto');
-    } else if(err.message === 'KEY_INVALIDA'){
-      setStatus('Chave inválida ou expirada. Confira em ⚙ acima.', true);
-      document.getElementById('cfgBody').classList.add('aberto');
-    } else {
-      setStatus('Erro: ' + err.message, true);
-      console.error(err);
-    }
-  } finally {
-    document.getElementById('btnAdd').disabled = false;
-  }
-}
-
-// ---- Otimizar rota via OSRM ----
-async function otimizarRota(){
-  const loja = pegarLoja();
-
-  if(loja){
-    origem = { lat: loja.lat, lon: loja.lon, label: `Saída: ${loja.endereco}` };
-  } else {
-    setStatus('Obtendo sua localização (nenhuma loja configurada)...');
-    document.getElementById('btnOtimizar').disabled = true;
-    const gps = await pegarLocalizacaoAtual();
-    if(!gps){
-      setStatus('Não foi possível obter sua localização. Configure o endereço da loja ou ative o GPS.', true);
-      document.getElementById('btnOtimizar').disabled = false;
-      return;
-    }
-    origem = { lat: gps.lat, lon: gps.lon, label: 'Você está aqui' };
-  }
-
-  document.getElementById('btnOtimizar').disabled = true;
-  setStatus('Calculando a melhor rota...');
-
-  const validos = paradas.filter(p => p.lat && p.lon);
-  const coords = [[origem.lon, origem.lat], ...validos.map(p => [p.lon, p.lat])]
-    .map(c => c.join(',')).join(';');
-
-  const url = `https://router.project-osrm.org/trip/v1/driving/${coords}?source=first&roundtrip=false&overview=full&geometries=geojson`;
-
-  try{
-    const res = await fetch(url);
-    const data = await res.json();
-
-    if(data.code !== 'Ok'){
-      setStatus('Não foi possível calcular a rota agora. Tente novamente.', true);
-      document.getElementById('btnOtimizar').disabled = false;
-      return;
-    }
-
-    // Reordenar paradas conforme trip waypoints (ignorando o índice 0 = origem)
-    const waypoints = data.waypoints
-      .map((wp, idx) => ({ idx, order: wp.waypoint_index }))
-      .filter(wp => wp.idx !== 0)
-      .sort((a,b) => a.order - b.order);
-
-    const novaOrdem = waypoints.map(wp => validos[wp.idx - 1]);
-    paradas = novaOrdem;
-    salvar();
-    renderLista();
-
-    // Desenhar rota real no mapa
-    if(routeLine) map.removeLayer(routeLine);
-    const trip = data.trips[0];
-    const latlngs = trip.geometry.coordinates.map(c => [c[1], c[0]]);
-    routeLine = L.polyline(latlngs, { color:'#F5C518', weight:4, opacity:0.85 }).addTo(map);
-    redesenharMapa();
-    map.fitBounds(latlngs, {padding:[30,30]});
-
-    const km = (trip.distance/1000).toFixed(1);
-    const min = Math.round(trip.duration/60);
-    document.getElementById('distTotal').textContent = `${km} km`;
-    document.getElementById('tempoTotal').textContent = `${min} min`;
-    document.getElementById('resumo').style.display = 'flex';
-
-    // ---- Botões de iniciar navegação ----
-    document.getElementById('iniciarRow').style.display = 'flex';
-    document.getElementById('iniciarRow2').style.display = 'block';
-
-    document.getElementById('btnGoogleMaps').onclick = () => {
-      const destino = validos[validos.length - 1];
-      const paradasIntermediarias = validos.slice(0, -1);
-      let url = `https://www.google.com/maps/dir/?api=1&origin=${origem.lat},${origem.lon}&destination=${destino.lat},${destino.lon}&travelmode=driving`;
-      if(paradasIntermediarias.length){
-        const wp = paradasIntermediarias.map(p => `${p.lat},${p.lon}`).join('|');
-        url += `&waypoints=${encodeURIComponent(wp)}`;
-      }
-      window.open(url, '_blank');
-    };
-
-    document.getElementById('btnWaze').onclick = () => {
-      const proxima = validos[0];
-      const url = `https://waze.com/ul?ll=${proxima.lat},${proxima.lon}&navigate=yes`;
-      window.open(url, '_blank');
-    };
-
-    setStatus('Rota otimizada!');
-  } catch(err){
-    setStatus('Erro ao calcular rota. Verifique sua conexão.', true);
-  } finally {
-    document.getElementById('btnOtimizar').disabled = false;
-  }
-}
-
-// ---- Eventos ----
-document.getElementById('btnAdd').addEventListener('click', adicionarEndereco);
-document.getElementById('inputEndereco').addEventListener('keypress', e => {
-  if(e.key === 'Enter') adicionarEndereco();
-});
-document.getElementById('btnOtimizar').addEventListener('click', otimizarRota);
-document.getElementById('btnLimpar').addEventListener('click', () => {
-  if(confirm('Remover todos os endereços?')){
-    paradas = [];
-    origem = pegarLoja() ? { lat: pegarLoja().lat, lon: pegarLoja().lon, label: `Saída: ${pegarLoja().endereco}` } : null;
-    salvar();
-    renderLista();
-    redesenharMapa();
-    document.getElementById('resumo').style.display = 'none';
-    document.getElementById('iniciarRow').style.display = 'none';
-    document.getElementById('iniciarRow2').style.display = 'none';
-  }
-});
-
-initMap();
-renderLista();
-garantirKeyPadrao();
-atualizarCfgStatus();
-atualizarCfgLojaStatus();
-const lojaSalva = pegarLoja();
-if(lojaSalva){
-  origem = { lat: lojaSalva.lat, lon: lojaSalva.lon, label: `Saída: ${lojaSalva.endereco}` };
-}
-redesenharMapa();
-if(!pegarKey()){
-  document.getElementById('cfgBody').classList.add('aberto');
-}
-</script>
+<script src="js/store.js"></script>
+<script src="js/format.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/produtos.js"></script>
+<script src="js/pdv.js"></script>
+<script src="js/clientes.js"></script>
+<script src="js/estoque.js"></script>
+<script src="js/relatorios.js"></script>
+<script src="js/app.js"></script>
 
 </body>
 </html>
