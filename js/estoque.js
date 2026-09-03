@@ -103,7 +103,7 @@ function ligarEventosEstoque(){
   document.getElementById('movProdutoNovo').addEventListener('change', atualizarVariacoesMovimentacaoNovo);
   document.getElementById('movFiltroTipo').addEventListener('change', renderEstoque);
 
-  document.getElementById('formMovimentacao').addEventListener('submit', e => {
+  document.getElementById('formMovimentacao').addEventListener('submit', async e => {
     e.preventDefault();
     const tipo = document.getElementById('movTipo').value;
     const produtoId = document.getElementById('movProduto').value;
@@ -120,6 +120,8 @@ function ligarEventosEstoque(){
       return;
     }
 
+    const btnSalvar = document.querySelector('#formMovimentacao button[type=submit]');
+    btnSalvar.disabled = true;
     try{
       if(tipo === 'troca'){
         const produtoNovoId = document.getElementById('movProdutoNovo').value;
@@ -128,15 +130,15 @@ function ligarEventosEstoque(){
           setMovStatus('Selecione o produto de entrada da troca.', true);
           return;
         }
-        registrarMovimentacao({ produtoId, variacaoId, tipo, delta: -Math.abs(qtd), obs: obs ? `Troca (saída): ${obs}` : 'Troca (saída)' });
-        registrarMovimentacao({ produtoId: produtoNovoId, variacaoId: variacaoNovoId, tipo, delta: Math.abs(qtd), obs: obs ? `Troca (entrada): ${obs}` : 'Troca (entrada)' });
+        await registrarMovimentacao({ produtoId, variacaoId, tipo, delta: -Math.abs(qtd), obs: obs ? `Troca (saída): ${obs}` : 'Troca (saída)' });
+        await registrarMovimentacao({ produtoId: produtoNovoId, variacaoId: variacaoNovoId, tipo, delta: Math.abs(qtd), obs: obs ? `Troca (entrada): ${obs}` : 'Troca (entrada)' });
       } else if(tipo === 'perda'){
-        registrarMovimentacao({ produtoId, variacaoId, tipo, delta: -Math.abs(qtd), obs });
+        await registrarMovimentacao({ produtoId, variacaoId, tipo, delta: -Math.abs(qtd), obs });
       } else if(tipo === 'ajuste'){
-        registrarMovimentacao({ produtoId, variacaoId, tipo, delta: qtd, obs });
+        await registrarMovimentacao({ produtoId, variacaoId, tipo, delta: qtd, obs });
       } else {
         // entrada, devolucao
-        registrarMovimentacao({ produtoId, variacaoId, tipo, delta: Math.abs(qtd), obs });
+        await registrarMovimentacao({ produtoId, variacaoId, tipo, delta: Math.abs(qtd), obs });
       }
 
       document.getElementById('formMovimentacao').reset();
@@ -145,6 +147,8 @@ function ligarEventosEstoque(){
       renderEstoque();
     } catch(err){
       setMovStatus('Erro: ' + err.message, true);
+    } finally {
+      btnSalvar.disabled = false;
     }
   });
 }

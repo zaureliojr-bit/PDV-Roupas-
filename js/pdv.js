@@ -143,6 +143,14 @@ function popularSelectClientesPdv(){
   select.value = atual;
 }
 
+function popularSelectVendedoresPdv(){
+  const select = document.getElementById('pdvVendedor');
+  const atual = select.value || pegarUltimoVendedorId();
+  select.innerHTML = '<option value="">Selecione...</option>' +
+    listarVendedores().map(v => `<option value="${v.id}">${escapeHtml(v.nome)}</option>`).join('');
+  select.value = atual;
+}
+
 function popularSelectPagamento(){
   const select = document.getElementById('pdvPagamento');
   if(select.options.length) return;
@@ -151,21 +159,29 @@ function popularSelectPagamento(){
 
 function renderPdv(){
   popularSelectClientesPdv();
+  popularSelectVendedoresPdv();
   popularSelectPagamento();
-  document.getElementById('pdvVendedor').value = pegarVendedorAtual();
   renderCarrinho();
 }
 
-function finalizarVendaPdv(){
+async function finalizarVendaPdv(){
   if(!carrinhoPdv.length) return;
-  const { desconto, total } = calcularTotais();
+  const { desconto } = calcularTotais();
   const formaPagamento = document.getElementById('pdvPagamento').value;
   const clienteId = document.getElementById('pdvCliente').value || null;
-  const vendedor = document.getElementById('pdvVendedor').value.trim();
-  salvarVendedorAtual(vendedor);
+  const vendedorId = document.getElementById('pdvVendedor').value;
+  const vendedor = vendedorId ? buscarVendedor(vendedorId)?.nome || '' : '';
 
+  if(!vendedorId){
+    setPdvStatus('Selecione o vendedor (cadastre um na aba Config, se ainda não tiver).', true);
+    return;
+  }
+  salvarUltimoVendedorId(vendedorId);
+
+  const btn = document.getElementById('btnFinalizarVenda');
+  btn.disabled = true;
   try{
-    const venda = finalizarVenda({
+    const venda = await finalizarVenda({
       itens: carrinhoPdv.map(({ estoqueDisponivel, ...item }) => item),
       desconto,
       formaPagamento,
@@ -178,6 +194,7 @@ function finalizarVendaPdv(){
     setPdvStatus(`Venda finalizada! Total: ${formatarMoeda(venda.total)}`);
   } catch(err){
     setPdvStatus('Erro ao finalizar venda: ' + err.message, true);
+    btn.disabled = carrinhoPdv.length === 0;
   }
 }
 

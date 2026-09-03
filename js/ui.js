@@ -1,7 +1,8 @@
 // Navegação por abas. Cada módulo expõe uma função `renderX()` chamada aqui
-// sempre que sua aba é ativada, garantindo que os dados exibidos estejam sempre
-// atualizados (inclusive após operações feitas em outras abas, como uma venda
-// no PDV que afeta o Dashboard e os Relatórios).
+// sempre que sua aba é ativada. Como os dados agora vêm do Firestore em tempo
+// real, `rerenderViewAtual()` também é chamada sempre que qualquer coleção
+// muda (em qualquer aparelho) — assim a aba aberta nunca fica desatualizada,
+// sem precisar trocar de aba.
 
 const RENDER_POR_VIEW = {
   dashboard: () => renderDashboard(),
@@ -9,10 +10,14 @@ const RENDER_POR_VIEW = {
   pdv: () => renderPdv(),
   clientes: () => renderClientes(),
   estoque: () => renderEstoque(),
-  relatorios: () => renderRelatorios()
+  relatorios: () => renderRelatorios(),
+  config: () => renderConfig()
 };
 
+let viewAtual = 'dashboard';
+
 function mudarView(nome){
+  viewAtual = nome;
   document.querySelectorAll('.tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === nome);
   });
@@ -20,6 +25,11 @@ function mudarView(nome){
     sec.classList.toggle('active', sec.id === `view-${nome}`);
   });
   const render = RENDER_POR_VIEW[nome];
+  if(render) render();
+}
+
+function rerenderViewAtual(){
+  const render = RENDER_POR_VIEW[viewAtual];
   if(render) render();
 }
 

@@ -120,7 +120,7 @@ function ligarEventosProdutos(){
     renderVariacoesForm();
   });
 
-  document.getElementById('formProduto').addEventListener('submit', e => {
+  document.getElementById('formProduto').addEventListener('submit', async e => {
     e.preventDefault();
     const dados = {
       nome: document.getElementById('pNome').value,
@@ -136,16 +136,24 @@ function ligarEventosProdutos(){
     };
     if(!dados.nome.trim()) return;
 
-    if(produtoEditandoId){
-      atualizarProduto(produtoEditandoId, dados);
-    } else {
-      criarProduto(dados);
+    const btnSalvar = document.querySelector('#formProduto button[type=submit]');
+    btnSalvar.disabled = true;
+    try{
+      if(produtoEditandoId){
+        await atualizarProduto(produtoEditandoId, dados);
+      } else {
+        await criarProduto(dados);
+      }
+      fecharFormProduto();
+      renderProdutos();
+    } catch(err){
+      alert('Erro ao salvar produto: ' + err.message);
+    } finally {
+      btnSalvar.disabled = false;
     }
-    fecharFormProduto();
-    renderProdutos();
   });
 
-  document.getElementById('produtosLista').addEventListener('click', e => {
+  document.getElementById('produtosLista').addEventListener('click', async e => {
     const item = e.target.closest('.item-produto');
     if(!item) return;
     const id = item.dataset.id;
@@ -154,8 +162,11 @@ function ligarEventosProdutos(){
       abrirFormProduto(buscarProduto(id));
     } else if(e.target.closest('.btnRemoverProduto')){
       if(confirm('Remover este produto? Essa ação não pode ser desfeita.')){
-        removerProduto(id);
-        renderProdutos();
+        try{
+          await removerProduto(id);
+        } catch(err){
+          alert('Erro ao remover produto: ' + err.message);
+        }
       }
     }
   });

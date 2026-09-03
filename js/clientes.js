@@ -87,7 +87,7 @@ function ligarEventosClientes(){
   document.getElementById('btnCancelarCliente').addEventListener('click', fecharFormCliente);
   document.getElementById('clienteBusca').addEventListener('input', renderClientes);
 
-  document.getElementById('formCliente').addEventListener('submit', e => {
+  document.getElementById('formCliente').addEventListener('submit', async e => {
     e.preventDefault();
     const dados = {
       nome: document.getElementById('cNome').value,
@@ -96,16 +96,24 @@ function ligarEventosClientes(){
     };
     if(!dados.nome.trim()) return;
 
-    if(clienteEditandoId){
-      atualizarCliente(clienteEditandoId, dados);
-    } else {
-      criarCliente(dados);
+    const btnSalvar = document.querySelector('#formCliente button[type=submit]');
+    btnSalvar.disabled = true;
+    try{
+      if(clienteEditandoId){
+        await atualizarCliente(clienteEditandoId, dados);
+      } else {
+        await criarCliente(dados);
+      }
+      fecharFormCliente();
+      renderClientes();
+    } catch(err){
+      alert('Erro ao salvar cliente: ' + err.message);
+    } finally {
+      btnSalvar.disabled = false;
     }
-    fecharFormCliente();
-    renderClientes();
   });
 
-  document.getElementById('clientesLista').addEventListener('click', e => {
+  document.getElementById('clientesLista').addEventListener('click', async e => {
     const item = e.target.closest('.item-produto');
     if(!item) return;
     const id = item.dataset.id;
@@ -114,8 +122,11 @@ function ligarEventosClientes(){
       abrirFormCliente(buscarCliente(id));
     } else if(e.target.closest('.btnRemoverCliente')){
       if(confirm('Remover este cliente? O histórico de vendas será mantido, mas desvinculado.')){
-        removerCliente(id);
-        renderClientes();
+        try{
+          await removerCliente(id);
+        } catch(err){
+          alert('Erro ao remover cliente: ' + err.message);
+        }
       }
     } else if(e.target.closest('.btnVerCliente')){
       clienteDetalheId = id;

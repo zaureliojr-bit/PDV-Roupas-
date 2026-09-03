@@ -290,3 +290,29 @@ button{
   .form-grid{grid-template-columns:1fr;}
   .variacao-row{grid-template-columns:1fr 1fr 70px auto;}
 }
+
+.pin-gate{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.pin-card{
+  width:100%;
+  max-width:320px;
+  background:var(--navy2);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:24px;
+  text-align:center;
+}
+.pin-card h1{margin:0 0 4px; font-size:20px;}
+.pin-card h1 span{color:var(--yellow);}
+.pin-card p{margin:0 0 18px; font-size:12.5px; color:var(--gray);}
+.pin-card input{
+  text-align:center;
+  letter-spacing:4px;
+  font-size:18px;
+  margin-bottom:12px;
+}

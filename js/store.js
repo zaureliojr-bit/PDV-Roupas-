@@ -1,14 +1,9 @@
-// Camada de dados do painel de vendas: persistência em localStorage e regras de
-// negócio (estoque, vendas, movimentações). Nenhum outro arquivo lê localStorage
-// diretamente — tudo passa por aqui.
-
-const DB_KEYS = {
-  produtos: 'vendas_produtos_v1',
-  clientes: 'vendas_clientes_v1',
-  vendas: 'vendas_vendas_v1',
-  movimentacoes: 'vendas_movimentacoes_v1',
-  vendedor: 'vendas_vendedor_atual_v1'
-};
+// Camada de dados do painel de vendas: tudo fica no Firestore (compartilhado
+// entre todos os aparelhos que entrarem com o mesmo PIN) e é sincronizado em
+// tempo real via onSnapshot. Nenhum outro arquivo fala com o Firestore
+// diretamente — tudo passa por aqui. As arrays abaixo (produtos, clientes...)
+// são mantidas atualizadas pelos listeners e lidas de forma síncrona pelo
+// resto do app, como antes (quando eram carregadas do localStorage).
 
 const TIPOS_MOVIMENTACAO = {
   entrada: 'Entrada',
@@ -21,33 +16,45 @@ const TIPOS_MOVIMENTACAO = {
 
 const FORMAS_PAGAMENTO = ['Dinheiro', 'Pix', 'Débito', 'Crédito', 'Outros'];
 
-function lerJSON(chave, valorPadrao){
-  const raw = localStorage.getItem(chave);
-  if(!raw) return valorPadrao;
-  try{
-    const dado = JSON.parse(raw);
-    return (dado === null || dado === undefined) ? valorPadrao : dado;
-  } catch(err){
-    console.warn(`Dado inválido em "${chave}", ignorando:`, err);
-    return valorPadrao;
-  }
-}
-
-function salvarJSON(chave, valor){
-  localStorage.setItem(chave, JSON.stringify(valor));
-}
+const ULTIMO_VENDEDOR_STORAGE = 'vendas_ultimo_vendedor_id_v1';
 
 function gerarId(){
   if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
   return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
 }
 
+// ---------------- Sincronização em tempo real ----------------
+
+let produtos = [];
+let clientes = [];
+let vendas = [];
+let movimentacoes = [];
+let vendedores = [];
+
+// Chamado uma vez, depois que a autenticação anônima é concluída. `aoAtualizar`
+// é chamado sempre que qualquer coleção mudar (local ou em outro aparelho).
+function iniciarSincronizacao(aoAtualizar, aoErro){
+  const colecoes = [
+    { nome: 'produtos', arr: produtos, campo: 'nome' },
+    { nome: 'clientes', arr: clientes, campo: 'nome' },
+    { nome: 'vendas', arr: vendas, campo: 'data', desc: true },
+    { nome: 'movimentacoes', arr: movimentacoes, campo: 'data', desc: true },
+    { nome: 'vendedores', arr: vendedores, campo: 'nome' }
+  ];
+
+  colecoes.forEach(({ nome, arr, campo, desc }) => {
+    db.collection(nome).orderBy(campo, desc ? 'desc' : 'asc').onSnapshot(snap => {
+      arr.length = 0;
+      snap.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+      aoAtualizar();
+    }, err => {
+      console.error(`Erro ao sincronizar "${nome}":`, err);
+      if(aoErro) aoErro(err);
+    });
+  });
+}
+
 // ---------------- Produtos ----------------
-
-let produtos = lerJSON(DB_KEYS.produtos, []);
-if(!Array.isArray(produtos)) produtos = [];
-
-function salvarProdutos(){ salvarJSON(DB_KEYS.produtos, produtos); }
 
 function listarProdutos(){ return produtos; }
 
@@ -62,13 +69,12 @@ function normalizarVariacao(v){
   };
 }
 
-function criarProduto(dados){
+async function criarProduto(dados){
   const variacoes = (dados.variacoes && dados.variacoes.length)
     ? dados.variacoes.map(normalizarVariacao)
     : [normalizarVariacao({ cor: '', tamanho: '', estoque: dados.estoque || 0 })];
 
   const produto = {
-    id: gerarId(),
     nome: (dados.nome || '').trim(),
     sku: (dados.sku || '').trim(),
     categoria: (dados.categoria || '').trim(),
@@ -80,32 +86,35 @@ function criarProduto(dados){
     foto: (dados.foto || '').trim(),
     variacoes
   };
-  produtos.push(produto);
-  salvarProdutos();
-  return produto;
+  const ref = await db.collection('produtos').add(produto);
+  return { id: ref.id, ...produto };
 }
 
-function atualizarProduto(id, dados){
+async function atualizarProduto(id, dados){
   const produto = buscarProduto(id);
   if(!produto) return null;
-  if(dados.nome !== undefined) produto.nome = dados.nome.trim();
-  if(dados.sku !== undefined) produto.sku = dados.sku.trim();
-  if(dados.categoria !== undefined) produto.categoria = dados.categoria.trim();
-  if(dados.marca !== undefined) produto.marca = dados.marca.trim();
-  if(dados.fornecedor !== undefined) produto.fornecedor = dados.fornecedor.trim();
-  if(dados.custo !== undefined) produto.custo = Number(dados.custo) || 0;
-  if(dados.precoVenda !== undefined) produto.precoVenda = Number(dados.precoVenda) || 0;
-  if(dados.estoqueMinimo !== undefined) produto.estoqueMinimo = Number(dados.estoqueMinimo) || 0;
-  if(dados.foto !== undefined) produto.foto = dados.foto.trim();
-  if(dados.variacoes) produto.variacoes = dados.variacoes.map(normalizarVariacao);
-  if(!produto.variacoes.length) produto.variacoes = [normalizarVariacao({ cor: '', tamanho: '', estoque: 0 })];
-  salvarProdutos();
-  return produto;
+
+  const atualizacao = {};
+  if(dados.nome !== undefined) atualizacao.nome = dados.nome.trim();
+  if(dados.sku !== undefined) atualizacao.sku = dados.sku.trim();
+  if(dados.categoria !== undefined) atualizacao.categoria = dados.categoria.trim();
+  if(dados.marca !== undefined) atualizacao.marca = dados.marca.trim();
+  if(dados.fornecedor !== undefined) atualizacao.fornecedor = dados.fornecedor.trim();
+  if(dados.custo !== undefined) atualizacao.custo = Number(dados.custo) || 0;
+  if(dados.precoVenda !== undefined) atualizacao.precoVenda = Number(dados.precoVenda) || 0;
+  if(dados.estoqueMinimo !== undefined) atualizacao.estoqueMinimo = Number(dados.estoqueMinimo) || 0;
+  if(dados.foto !== undefined) atualizacao.foto = dados.foto.trim();
+  if(dados.variacoes){
+    atualizacao.variacoes = dados.variacoes.map(normalizarVariacao);
+    if(!atualizacao.variacoes.length) atualizacao.variacoes = [normalizarVariacao({ cor: '', tamanho: '', estoque: 0 })];
+  }
+
+  await db.collection('produtos').doc(id).update(atualizacao);
+  return { ...produto, ...atualizacao };
 }
 
-function removerProduto(id){
-  produtos = produtos.filter(p => p.id !== id);
-  salvarProdutos();
+async function removerProduto(id){
+  await db.collection('produtos').doc(id).delete();
 }
 
 function estoqueTotalProduto(produto){
@@ -120,42 +129,40 @@ function buscarVariacao(produto, variacaoId){
   return produto.variacoes.find(v => v.id === variacaoId) || produto.variacoes[0] || null;
 }
 
+function descreverVariacao(variacao){
+  const partes = [variacao.cor, variacao.tamanho].filter(Boolean);
+  return partes.length ? partes.join(' / ') : '-';
+}
+
 // ---------------- Clientes ----------------
-
-let clientes = lerJSON(DB_KEYS.clientes, []);
-if(!Array.isArray(clientes)) clientes = [];
-
-function salvarClientes(){ salvarJSON(DB_KEYS.clientes, clientes); }
 
 function listarClientes(){ return clientes; }
 
 function buscarCliente(id){ return clientes.find(c => c.id === id) || null; }
 
-function criarCliente(dados){
+async function criarCliente(dados){
   const cliente = {
-    id: gerarId(),
     nome: (dados.nome || '').trim(),
     telefone: (dados.telefone || '').trim(),
     cpf: (dados.cpf || '').trim()
   };
-  clientes.push(cliente);
-  salvarClientes();
-  return cliente;
+  const ref = await db.collection('clientes').add(cliente);
+  return { id: ref.id, ...cliente };
 }
 
-function atualizarCliente(id, dados){
+async function atualizarCliente(id, dados){
   const cliente = buscarCliente(id);
   if(!cliente) return null;
-  if(dados.nome !== undefined) cliente.nome = dados.nome.trim();
-  if(dados.telefone !== undefined) cliente.telefone = dados.telefone.trim();
-  if(dados.cpf !== undefined) cliente.cpf = dados.cpf.trim();
-  salvarClientes();
-  return cliente;
+  const atualizacao = {};
+  if(dados.nome !== undefined) atualizacao.nome = dados.nome.trim();
+  if(dados.telefone !== undefined) atualizacao.telefone = dados.telefone.trim();
+  if(dados.cpf !== undefined) atualizacao.cpf = dados.cpf.trim();
+  await db.collection('clientes').doc(id).update(atualizacao);
+  return { ...cliente, ...atualizacao };
 }
 
-function removerCliente(id){
-  clientes = clientes.filter(c => c.id !== id);
-  salvarClientes();
+async function removerCliente(id){
+  await db.collection('clientes').doc(id).delete();
 }
 
 function vendasDoCliente(clienteId){
@@ -171,36 +178,61 @@ function ultimaCompraCliente(clienteId){
   return lista.length ? lista[0].data : null;
 }
 
+// ---------------- Vendedores ----------------
+
+function listarVendedores(){ return vendedores; }
+
+function buscarVendedor(id){ return vendedores.find(v => v.id === id) || null; }
+
+async function criarVendedor(nome){
+  const nomeLimpo = (nome || '').trim();
+  if(!nomeLimpo) return null;
+  const ref = await db.collection('vendedores').add({ nome: nomeLimpo });
+  return { id: ref.id, nome: nomeLimpo };
+}
+
+async function removerVendedor(id){
+  await db.collection('vendedores').doc(id).delete();
+}
+
+function pegarUltimoVendedorId(){
+  return localStorage.getItem(ULTIMO_VENDEDOR_STORAGE) || '';
+}
+
+function salvarUltimoVendedorId(id){
+  localStorage.setItem(ULTIMO_VENDEDOR_STORAGE, id || '');
+}
+
 // ---------------- Movimentações de estoque ----------------
-
-let movimentacoes = lerJSON(DB_KEYS.movimentacoes, []);
-if(!Array.isArray(movimentacoes)) movimentacoes = [];
-
-function salvarMovimentacoes(){ salvarJSON(DB_KEYS.movimentacoes, movimentacoes); }
 
 function listarMovimentacoes(){ return movimentacoes; }
 
-function aplicarDeltaEstoque(produtoId, variacaoId, delta){
-  const produto = buscarProduto(produtoId);
-  if(!produto) return false;
-  const variacao = buscarVariacao(produto, variacaoId);
-  if(!variacao) return false;
-  variacao.estoque = Math.max(0, variacao.estoque + delta);
-  salvarProdutos();
-  return true;
+// Usa uma transação do Firestore para não perder baixas de estoque quando
+// duas vendas/movimentações acontecem quase ao mesmo tempo em aparelhos
+// diferentes (evita "última escrita ganha" sobrescrever a outra).
+async function aplicarDeltaEstoqueTransacao(produtoId, variacaoId, delta){
+  const ref = db.collection('produtos').doc(produtoId);
+  await db.runTransaction(async tx => {
+    const snap = await tx.get(ref);
+    if(!snap.exists) throw new Error('PRODUTO_INEXISTENTE');
+    const variacoesAtuais = (snap.data().variacoes || []).map(v => ({ ...v }));
+    const variacao = variacoesAtuais.find(v => v.id === variacaoId) || variacoesAtuais[0];
+    if(!variacao) throw new Error('VARIACAO_INEXISTENTE');
+    variacao.estoque = Math.max(0, (Number(variacao.estoque) || 0) + delta);
+    tx.update(ref, { variacoes: variacoesAtuais });
+  });
 }
 
 // delta: positivo aumenta estoque, negativo diminui. `tipo` só categoriza o motivo.
-function registrarMovimentacao({ produtoId, variacaoId, tipo, delta, obs, vendaId }){
+async function registrarMovimentacao({ produtoId, variacaoId, tipo, delta, obs, vendaId }){
   const produto = buscarProduto(produtoId);
   if(!produto) throw new Error('PRODUTO_INEXISTENTE');
   const variacao = buscarVariacao(produto, variacaoId);
   if(!variacao) throw new Error('VARIACAO_INEXISTENTE');
 
-  aplicarDeltaEstoque(produtoId, variacao.id, delta);
+  await aplicarDeltaEstoqueTransacao(produtoId, variacao.id, delta);
 
   const mov = {
-    id: gerarId(),
     data: new Date().toISOString(),
     produtoId,
     variacaoId: variacao.id,
@@ -211,36 +243,24 @@ function registrarMovimentacao({ produtoId, variacaoId, tipo, delta, obs, vendaI
     obs: obs || '',
     vendaId: vendaId || null
   };
-  movimentacoes.unshift(mov);
-  salvarMovimentacoes();
-  return mov;
-}
-
-function descreverVariacao(variacao){
-  const partes = [variacao.cor, variacao.tamanho].filter(Boolean);
-  return partes.length ? partes.join(' / ') : '-';
+  const ref = await db.collection('movimentacoes').add(mov);
+  return { id: ref.id, ...mov };
 }
 
 // ---------------- Vendas ----------------
-
-let vendas = lerJSON(DB_KEYS.vendas, []);
-if(!Array.isArray(vendas)) vendas = [];
-
-function salvarVendas(){ salvarJSON(DB_KEYS.vendas, vendas); }
 
 function listarVendas(){ return vendas; }
 
 function buscarVenda(id){ return vendas.find(v => v.id === id) || null; }
 
 // itens: [{ produtoId, variacaoId, nome, variacaoDesc, qtd, precoUnit, custoUnit }]
-function finalizarVenda({ itens, desconto, formaPagamento, clienteId, vendedor }){
+async function finalizarVenda({ itens, desconto, formaPagamento, clienteId, vendedor }){
   if(!itens || !itens.length) throw new Error('CARRINHO_VAZIO');
 
   const subtotal = itens.reduce((soma, item) => soma + item.qtd * item.precoUnit, 0);
   const total = Math.max(0, subtotal - (Number(desconto) || 0));
 
   const venda = {
-    id: gerarId(),
     data: new Date().toISOString(),
     itens,
     subtotal,
@@ -251,29 +271,20 @@ function finalizarVenda({ itens, desconto, formaPagamento, clienteId, vendedor }
     vendedor: (vendedor || '').trim()
   };
 
-  vendas.unshift(venda);
-  salvarVendas();
+  const ref = await db.collection('vendas').add(venda);
 
-  itens.forEach(item => {
-    registrarMovimentacao({
+  for(const item of itens){
+    await registrarMovimentacao({
       produtoId: item.produtoId,
       variacaoId: item.variacaoId,
       tipo: 'venda',
       delta: -item.qtd,
       obs: 'Baixa automática por venda',
-      vendaId: venda.id
+      vendaId: ref.id
     });
-  });
+  }
 
-  return venda;
-}
-
-function pegarVendedorAtual(){
-  return localStorage.getItem(DB_KEYS.vendedor) || '';
-}
-
-function salvarVendedorAtual(nome){
-  localStorage.setItem(DB_KEYS.vendedor, nome);
+  return { id: ref.id, ...venda };
 }
 
 // ---------------- Consultas agregadas ----------------
@@ -304,7 +315,7 @@ function faturamentoTotal(listaVendas){
 function lucroEstimado(listaVendas){
   return listaVendas.reduce((soma, v) => {
     const lucroVenda = v.itens.reduce((s, item) => s + (item.precoUnit - (item.custoUnit || 0)) * item.qtd, 0);
-    return soma + lucroVenda - 0;
+    return soma + lucroVenda;
   }, 0);
 }
 
