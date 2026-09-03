@@ -125,7 +125,8 @@
 
       <div class="form-grid">
         <label>Cliente
-          <select id="pdvCliente"><option value="">Consumidor não identificado</option></select>
+          <input type="text" id="pdvClienteBusca" autocomplete="off" placeholder="Nome ou telefone (opcional)" />
+          <div id="pdvClienteSugestoes" class="sugestoes"></div>
         </label>
         <label>Vendedor
           <select id="pdvVendedor"><option value="">Selecione...</option></select>

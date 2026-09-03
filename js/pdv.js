@@ -135,12 +135,43 @@ function setPdvStatus(msg, isErro){
   el.classList.toggle('erro', !!isErro);
 }
 
-function popularSelectClientesPdv(){
-  const select = document.getElementById('pdvCliente');
-  const atual = select.value;
-  select.innerHTML = '<option value="">Consumidor não identificado</option>' +
-    listarClientes().map(c => `<option value="${c.id}">${escapeHtml(c.nome)}</option>`).join('');
-  select.value = atual;
+let clienteSelecionadoId = null;
+
+function digitosSomente(texto){
+  return (texto || '').replace(/\D/g, '');
+}
+
+// Busca por nome (substring) ou por telefone — comparando só os dígitos, o
+// que já permite achar sem digitar o DDD (ex: "94026" bate com "(11) 94026-6948").
+function buscarClientesPdv(termo){
+  const t = termo.trim().toLowerCase();
+  if(!t) return [];
+  const digitos = digitosSomente(termo);
+  return listarClientes().filter(c => {
+    const bateNome = c.nome.toLowerCase().includes(t);
+    const batePhone = digitos && digitosSomente(c.telefone).includes(digitos);
+    return bateNome || batePhone;
+  }).slice(0, 6);
+}
+
+function sugestaoClienteHtml(cliente){
+  return `
+    <div class="sugestao-item" data-cliente="${cliente.id}">
+      <span class="nome">${escapeHtml(cliente.nome)}</span>
+      <span class="preco">${escapeHtml(cliente.telefone || '')}</span>
+    </div>`;
+}
+
+function renderSugestoesClientePdv(){
+  const termo = document.getElementById('pdvClienteBusca').value;
+  const resultados = clienteSelecionadoId ? [] : buscarClientesPdv(termo);
+  document.getElementById('pdvClienteSugestoes').innerHTML = resultados.map(sugestaoClienteHtml).join('');
+}
+
+function selecionarClientePdv(cliente){
+  clienteSelecionadoId = cliente ? cliente.id : null;
+  document.getElementById('pdvClienteBusca').value = cliente ? cliente.nome : '';
+  document.getElementById('pdvClienteSugestoes').innerHTML = '';
 }
 
 function popularSelectVendedoresPdv(){
@@ -158,7 +189,6 @@ function popularSelectPagamento(){
 }
 
 function renderPdv(){
-  popularSelectClientesPdv();
   popularSelectVendedoresPdv();
   popularSelectPagamento();
   renderCarrinho();
@@ -168,7 +198,7 @@ async function finalizarVendaPdv(){
   if(!carrinhoPdv.length) return;
   const { desconto } = calcularTotais();
   const formaPagamento = document.getElementById('pdvPagamento').value;
-  const clienteId = document.getElementById('pdvCliente').value || null;
+  const clienteId = clienteSelecionadoId;
   const vendedorId = document.getElementById('pdvVendedor').value;
   const vendedor = vendedorId ? buscarVendedor(vendedorId)?.nome || '' : '';
 
@@ -190,6 +220,7 @@ async function finalizarVendaPdv(){
     });
     carrinhoPdv = [];
     document.getElementById('pdvDesconto').value = '';
+    selecionarClientePdv(null);
     renderCarrinho();
     setPdvStatus(`Venda finalizada! Total: ${formatarMoeda(venda.total)}`);
   } catch(err){
@@ -200,6 +231,19 @@ async function finalizarVendaPdv(){
 
 function ligarEventosPdv(){
   aplicarMascaraMoeda(document.getElementById('pdvDesconto'));
+
+  const clienteBusca = document.getElementById('pdvClienteBusca');
+  clienteBusca.addEventListener('input', () => {
+    clienteSelecionadoId = null;
+    renderSugestoesClientePdv();
+  });
+  clienteBusca.addEventListener('focus', renderSugestoesClientePdv);
+
+  document.getElementById('pdvClienteSugestoes').addEventListener('click', e => {
+    const item = e.target.closest('.sugestao-item');
+    if(!item) return;
+    selecionarClientePdv(buscarCliente(item.dataset.cliente));
+  });
 
   const busca = document.getElementById('pdvBusca');
   busca.addEventListener('input', renderSugestoesPdv);
