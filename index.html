@@ -71,6 +71,27 @@
         <input type="text" id="produtoBusca" autocomplete="off" placeholder="Buscar por nome, SKU ou categoria" />
         <button class="btn-add" id="btnNovoProduto" aria-label="Novo produto">+</button>
       </div>
+      <button type="button" class="btn-secondary" id="btnAbrirLote">📋 Cadastrar vários de uma vez</button>
+    </div>
+
+    <div class="card" id="loteCard" style="display:none;">
+      <h2>Cadastro em lote</h2>
+      <p class="hint">
+        Um produto por linha, campos separados por ponto e vírgula ( ; ). Cores e tamanhos vão
+        separados por vírgula — o sistema cria uma variação pra cada combinação, com estoque 0
+        (ajuste depois em Estoque ou editando o produto).
+        <br /><br />
+        <b>Formato:</b> Nome; Preço; Cores; Tamanhos<br />
+        <b>Exemplo:</b><br />
+        Vestido Curto Folhagem; 459,90; Verde, Azul; P, M, G<br />
+        Blusa Cropped Listrada; 189,90; Preta; U
+      </p>
+      <textarea id="loteTexto" rows="6" placeholder="Cole aqui, um produto por linha..."></textarea>
+      <div class="form-actions">
+        <button type="button" class="btn-primary" id="btnCadastrarLote">Cadastrar lote</button>
+        <button type="button" class="btn-secondary" id="btnCancelarLote">Cancelar</button>
+      </div>
+      <pre class="status" id="loteResultado"></pre>
     </div>
 
     <div class="card" id="formProdutoCard" style="display:none;">

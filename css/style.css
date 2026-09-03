@@ -112,7 +112,7 @@ main{
 
 .add-row{display:flex; gap:8px;}
 
-input[type=text], input[type=number], input[type=date], select{
+input[type=text], input[type=number], input[type=date], select, textarea{
   width:100%;
   padding:11px 12px;
   border-radius:10px;
@@ -122,7 +122,8 @@ input[type=text], input[type=number], input[type=date], select{
   font-size:14.5px;
   font-family:inherit;
 }
-input::placeholder{color:var(--gray);}
+input::placeholder, textarea::placeholder{color:var(--gray);}
+textarea{resize:vertical; margin-top:8px;}
 
 button{
   border:none;
@@ -288,6 +289,11 @@ button{
   min-height:16px;
 }
 .status.erro{color:var(--red);}
+pre.status{
+  white-space:pre-wrap;
+  font-family:inherit;
+  margin:8px 0 0;
+}
 
 .lista-simples{list-style:none; margin:0; padding:0;}
 .lista-simples li{

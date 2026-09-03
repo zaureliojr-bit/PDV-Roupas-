@@ -28,6 +28,7 @@ function lerVariacoesForm(){
 }
 
 function abrirFormProduto(produto){
+  fecharLote();
   produtoEditandoId = produto ? produto.id : null;
   document.getElementById('formProdutoTitulo').textContent = produto ? 'Editar produto' : 'Novo produto';
   document.getElementById('produtoId').value = produto ? produto.id : '';
@@ -99,6 +100,96 @@ function renderProdutos(){
   container.innerHTML = `<div class="card">${lista.map(produtoItemHtml).join('')}</div>`;
 }
 
+// ---------------- Cadastro em lote ----------------
+// Formato de cada linha: Nome; Preço; Cores; Tamanhos
+// Cores e tamanhos são listas separadas por vírgula — uma variação é criada
+// pra cada combinação (estoque começa em 0, ajustável depois).
+
+function abrirLote(){
+  fecharFormProduto();
+  document.getElementById('loteResultado').textContent = '';
+  document.getElementById('loteCard').style.display = 'block';
+  document.getElementById('loteCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function fecharLote(){
+  document.getElementById('loteCard').style.display = 'none';
+  document.getElementById('loteTexto').value = '';
+  document.getElementById('loteResultado').textContent = '';
+}
+
+function parsearPrecoLote(texto){
+  const limpo = (texto || '').replace(/[^\d,.-]/g, '');
+  if(!limpo) return 0;
+  if(limpo.includes(',')) return Number(limpo.replace(/\./g, '').replace(',', '.')) || 0;
+  return Number(limpo) || 0;
+}
+
+function parsearLinhaLote(linha){
+  const partes = linha.split(';').map(p => p.trim());
+  const nome = partes[0] || '';
+  if(!nome || partes.length < 2 || !partes[1]) return null;
+
+  const precoVenda = parsearPrecoLote(partes[1] || '');
+  const cores = (partes[2] || '').split(',').map(c => c.trim()).filter(Boolean);
+  const tamanhos = (partes[3] || '').split(',').map(t => t.trim()).filter(Boolean);
+
+  const listaCores = cores.length ? cores : [''];
+  const listaTamanhos = tamanhos.length ? tamanhos : [''];
+  const variacoes = [];
+  listaCores.forEach(cor => {
+    listaTamanhos.forEach(tamanho => variacoes.push({ cor, tamanho, estoque: 0 }));
+  });
+
+  return { nome, precoVenda, variacoes };
+}
+
+async function processarLote(){
+  const linhas = document.getElementById('loteTexto').value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+
+  const resultado = document.getElementById('loteResultado');
+  if(!linhas.length){
+    resultado.textContent = 'Cole pelo menos uma linha.';
+    resultado.classList.add('erro');
+    return;
+  }
+
+  const btn = document.getElementById('btnCadastrarLote');
+  btn.disabled = true;
+  resultado.classList.remove('erro');
+  resultado.textContent = `Cadastrando ${linhas.length} linha(s)...`;
+
+  let sucesso = 0;
+  const erros = [];
+  for(const linha of linhas){
+    const dados = parsearLinhaLote(linha);
+    if(!dados){
+      erros.push(`"${linha}" — preciso de pelo menos Nome; Preço`);
+      continue;
+    }
+    try{
+      await criarProduto(dados);
+      sucesso++;
+    } catch(err){
+      erros.push(`"${linha}" — erro: ${err.message}`);
+    }
+  }
+
+  let msg = `${sucesso} produto(s) cadastrado(s) com sucesso.`;
+  if(erros.length) msg += `\n\n${erros.length} linha(s) com problema:\n` + erros.join('\n');
+  resultado.textContent = msg;
+  resultado.classList.toggle('erro', erros.length > 0);
+  btn.disabled = false;
+
+  if(sucesso > 0){
+    document.getElementById('loteTexto').value = '';
+    renderProdutos();
+  }
+}
+
 function ligarEventosProdutos(){
   aplicarMascaraMoeda(document.getElementById('pCusto'));
   aplicarMascaraMoeda(document.getElementById('pPreco'));
@@ -106,6 +197,10 @@ function ligarEventosProdutos(){
   document.getElementById('btnNovoProduto').addEventListener('click', () => abrirFormProduto(null));
   document.getElementById('btnCancelarProduto').addEventListener('click', fecharFormProduto);
   document.getElementById('produtoBusca').addEventListener('input', renderProdutos);
+
+  document.getElementById('btnAbrirLote').addEventListener('click', abrirLote);
+  document.getElementById('btnCancelarLote').addEventListener('click', fecharLote);
+  document.getElementById('btnCadastrarLote').addEventListener('click', processarLote);
 
   document.getElementById('btnAddVariacao').addEventListener('click', () => {
     variacoesEmEdicao = lerVariacoesForm();
