@@ -46,16 +46,12 @@ function numeroParaMascara(valor){
   return (Number(valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Máscara de telefone brasileiro: (11) 4026-6948 (fixo, 10 dígitos) ou
-// (11) 94026-6948 (celular, 11 dígitos) — o traço "pula" uma casa assim que
-// o 11º dígito é digitado, já que não dá pra saber antes se é fixo ou
-// celular.
+// Máscara de telefone brasileiro no formato celular: (11) 94026-6948.
 function formatarTelefoneDigitos(digitos){
   const d = digitos.slice(0, 11);
   if(!d) return '';
   if(d.length <= 2) return `(${d}`;
-  if(d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  if(d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  if(d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
