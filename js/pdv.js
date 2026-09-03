@@ -103,7 +103,7 @@ function linhaCarrinhoHtml(item, idx){
 
 function calcularTotais(){
   const subtotal = carrinhoPdv.reduce((s, i) => s + i.qtd * i.precoUnit, 0);
-  const desconto = Number(document.getElementById('pdvDesconto').value) || 0;
+  const desconto = valorMascaraParaNumero(document.getElementById('pdvDesconto').value);
   const total = Math.max(0, subtotal - desconto);
   return { subtotal, desconto, total };
 }
@@ -189,7 +189,7 @@ async function finalizarVendaPdv(){
       vendedor
     });
     carrinhoPdv = [];
-    document.getElementById('pdvDesconto').value = 0;
+    document.getElementById('pdvDesconto').value = '';
     renderCarrinho();
     setPdvStatus(`Venda finalizada! Total: ${formatarMoeda(venda.total)}`);
   } catch(err){
@@ -199,6 +199,8 @@ async function finalizarVendaPdv(){
 }
 
 function ligarEventosPdv(){
+  aplicarMascaraMoeda(document.getElementById('pdvDesconto'));
+
   const busca = document.getElementById('pdvBusca');
   busca.addEventListener('input', renderSugestoesPdv);
   busca.addEventListener('keypress', e => {

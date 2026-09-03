@@ -37,8 +37,8 @@ function abrirFormProduto(produto){
   document.getElementById('pMarca').value = produto ? produto.marca : '';
   document.getElementById('pFornecedor').value = produto ? produto.fornecedor : '';
   document.getElementById('pFoto').value = produto ? produto.foto : '';
-  document.getElementById('pCusto').value = produto ? produto.custo : '';
-  document.getElementById('pPreco').value = produto ? produto.precoVenda : '';
+  document.getElementById('pCusto').value = produto ? numeroParaMascara(produto.custo) : '';
+  document.getElementById('pPreco').value = produto ? numeroParaMascara(produto.precoVenda) : '';
   document.getElementById('pEstoqueMinimo').value = produto ? produto.estoqueMinimo : 0;
 
   variacoesEmEdicao = produto
@@ -100,6 +100,9 @@ function renderProdutos(){
 }
 
 function ligarEventosProdutos(){
+  aplicarMascaraMoeda(document.getElementById('pCusto'));
+  aplicarMascaraMoeda(document.getElementById('pPreco'));
+
   document.getElementById('btnNovoProduto').addEventListener('click', () => abrirFormProduto(null));
   document.getElementById('btnCancelarProduto').addEventListener('click', fecharFormProduto);
   document.getElementById('produtoBusca').addEventListener('input', renderProdutos);
@@ -129,8 +132,8 @@ function ligarEventosProdutos(){
       marca: document.getElementById('pMarca').value,
       fornecedor: document.getElementById('pFornecedor').value,
       foto: document.getElementById('pFoto').value,
-      custo: document.getElementById('pCusto').value,
-      precoVenda: document.getElementById('pPreco').value,
+      custo: valorMascaraParaNumero(document.getElementById('pCusto').value),
+      precoVenda: valorMascaraParaNumero(document.getElementById('pPreco').value),
       estoqueMinimo: document.getElementById('pEstoqueMinimo').value,
       variacoes: lerVariacoesForm()
     };

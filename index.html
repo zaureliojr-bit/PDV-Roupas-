@@ -84,8 +84,8 @@
           <label>Marca<input type="text" id="pMarca" /></label>
           <label>Fornecedor<input type="text" id="pFornecedor" /></label>
           <label>Foto (URL)<input type="text" id="pFoto" placeholder="https://..." /></label>
-          <label>Custo (R$)<input type="number" id="pCusto" step="0.01" min="0" /></label>
-          <label>Preço de venda (R$)<input type="number" id="pPreco" step="0.01" min="0" /></label>
+          <label>Custo (R$)<input type="text" id="pCusto" autocomplete="off" placeholder="0,00" /></label>
+          <label>Preço de venda (R$)<input type="text" id="pPreco" autocomplete="off" placeholder="0,00" /></label>
           <label>Estoque mínimo<input type="number" id="pEstoqueMinimo" step="1" min="0" /></label>
         </div>
 
@@ -131,7 +131,7 @@
           <select id="pdvVendedor"><option value="">Selecione...</option></select>
         </label>
         <label>Desconto (R$)
-          <input type="number" id="pdvDesconto" step="0.01" min="0" value="0" />
+          <input type="text" id="pdvDesconto" autocomplete="off" placeholder="0,00" />
         </label>
         <label>Forma de pagamento
           <select id="pdvPagamento"></select>
