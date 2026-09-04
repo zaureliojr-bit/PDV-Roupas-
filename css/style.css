@@ -17,7 +17,7 @@ body{
   min-height:100vh;
 }
 header{
-  padding:18px 16px 0;
+  padding:calc(18px + env(safe-area-inset-top)) 16px 0;
   background:var(--navy2);
   border-bottom:2px solid var(--yellow);
   position:sticky;
@@ -26,7 +26,7 @@ header{
 }
 .btn-sair{
   position:absolute;
-  top:14px;
+  top:calc(14px + env(safe-area-inset-top));
   right:16px;
   background:none;
   color:var(--gray);
