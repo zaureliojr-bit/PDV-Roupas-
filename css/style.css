@@ -330,9 +330,21 @@ pre.status{
 .pin-card h1{margin:0 0 4px; font-size:20px;}
 .pin-card h1 span{color:var(--yellow);}
 .pin-card p{margin:0 0 18px; font-size:12.5px; color:var(--gray);}
-.pin-card input{
+.pin-boxes{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-bottom:14px;
+}
+input.pin-box{
+  width:48px;
+  height:56px;
+  padding:0;
   text-align:center;
-  letter-spacing:4px;
-  font-size:18px;
-  margin-bottom:12px;
+  font-size:24px;
+  font-weight:800;
+}
+input.pin-box:focus{
+  outline:none;
+  border-color:var(--yellow);
 }
