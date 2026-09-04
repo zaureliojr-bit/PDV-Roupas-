@@ -8,7 +8,7 @@ function abrirFormCliente(cliente){
   document.getElementById('formClienteTitulo').textContent = cliente ? 'Editar cliente' : 'Novo cliente';
   document.getElementById('clienteId').value = cliente ? cliente.id : '';
   document.getElementById('cNome').value = cliente ? cliente.nome : '';
-  document.getElementById('cTelefone').value = cliente ? cliente.telefone : '';
+  sincronizarMascaraTelefone(document.getElementById('cTelefone'), cliente ? cliente.telefone : '');
   document.getElementById('cCpf').value = cliente ? cliente.cpf : '';
   document.getElementById('formClienteCard').style.display = 'block';
   document.getElementById('formClienteCard').scrollIntoView({ behavior: 'smooth', block: 'start' });

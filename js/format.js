@@ -46,18 +46,59 @@ function numeroParaMascara(valor){
   return (Number(valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Máscara de telefone brasileiro no formato celular: (11) 94026-6948.
+// Máscara de telefone com código do país: +55 (11) 94026-6948. Se o que foi
+// digitado/colado tiver mais de 11 dígitos, assume que os 2 primeiros já são
+// o código do país (é o que acontece ao colar um contato copiado do
+// WhatsApp, que já vem como "+55 11 94026-6948"). Com 11 dígitos ou menos,
+// assume Brasil (+55) e trata tudo como DDD + número.
 function formatarTelefoneDigitos(digitos){
-  const d = digitos.slice(0, 11);
+  const d = digitos.slice(0, 13);
   if(!d) return '';
-  if(d.length <= 2) return `(${d}`;
-  if(d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  let codigoPais = '55';
+  let local = d;
+  if(d.length > 11){
+    codigoPais = d.slice(0, 2);
+    local = d.slice(2);
+  }
+  if(local.length <= 2) return `+${codigoPais} (${local}`;
+  if(local.length <= 7) return `+${codigoPais} (${local.slice(0, 2)}) ${local.slice(2)}`;
+  return `+${codigoPais} (${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7, 11)}`;
 }
 
+// Como a máscara "desenha" o +55 assumido junto do texto, não dá pra
+// simplesmente re-extrair os dígitos do que está exibido a cada tecla — o
+// "55" desenhado voltaria a ser lido como se tivesse sido digitado, e o
+// número cresce sozinho. Por isso guardamos à parte (input._digitosTelefone)
+// só os dígitos que a pessoa realmente digitou/colou, e comparamos o texto
+// atual com o que já esperávamos pra descobrir o que mudou (digitou no fim
+// ou apagou).
 function aplicarMascaraTelefone(input){
   input.setAttribute('inputmode', 'numeric');
+  input._digitosTelefone = digitosTelefone(input.value);
+
   input.addEventListener('input', () => {
-    input.value = formatarTelefoneDigitos(input.value.replace(/\D/g, ''));
+    const mostrado = digitosTelefone(input.value);
+    const semMudanca = digitosTelefone(formatarTelefoneDigitos(input._digitosTelefone));
+
+    if(mostrado.length > semMudanca.length){
+      input._digitosTelefone += mostrado.slice(semMudanca.length);
+    } else if(mostrado.length < semMudanca.length){
+      const removidos = semMudanca.length - mostrado.length;
+      input._digitosTelefone = input._digitosTelefone.slice(0, Math.max(0, input._digitosTelefone.length - removidos));
+    }
+
+    input.value = formatarTelefoneDigitos(input._digitosTelefone);
   });
+}
+
+function digitosTelefone(texto){
+  return (texto || '').replace(/\D/g, '');
+}
+
+// Usado ao abrir o formulário de edição — preenche o campo E sincroniza o
+// buffer interno de dígitos, senão a próxima tecla digitada compararia com
+// um buffer desatualizado (vazio) e bagunçaria o número.
+function sincronizarMascaraTelefone(input, valor){
+  input.value = valor || '';
+  input._digitosTelefone = digitosTelefone(valor || '');
 }

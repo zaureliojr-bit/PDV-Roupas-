@@ -196,8 +196,13 @@ function renderPdv(){
   renderCarrinho();
 }
 
-function digitosTelefone(texto){
-  return (texto || '').replace(/\D/g, '');
+// Telefones cadastrados com o formato novo (+55 (11) 94026-6948) já vêm com
+// o código do país nos dígitos; cadastros antigos (só 11 dígitos, sem
+// código) ainda precisam do "55" na frente pro link do WhatsApp funcionar.
+function numeroWhatsapp(telefone){
+  const digitos = digitosTelefone(telefone);
+  if(!digitos) return '';
+  return digitos.length <= 11 ? `55${digitos}` : digitos;
 }
 
 function gerarComprovanteTexto(venda, clienteNome){
@@ -230,8 +235,7 @@ function enviarComprovanteWhatsapp(){
   if(!ultimoComprovante) return;
   const { venda, clienteNome, clienteTelefone } = ultimoComprovante;
   const texto = gerarComprovanteTexto(venda, clienteNome);
-  const digitos = digitosTelefone(clienteTelefone);
-  const numero = digitos ? `55${digitos}` : '';
+  const numero = numeroWhatsapp(clienteTelefone);
   window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`, '_blank');
 }
 
