@@ -53,7 +53,7 @@ function ligarPinGate(aoDesbloquear){
   const boxes = [];
   for(let i = 0; i < tamanho; i++){
     const box = document.createElement('input');
-    box.type = 'text';
+    box.type = 'password';
     box.inputMode = 'numeric';
     box.pattern = '[0-9]*';
     box.maxLength = 1;
