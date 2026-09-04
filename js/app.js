@@ -10,6 +10,7 @@ function ligarEventosDoApp(){
   ligarEventosEstoque();
   ligarEventosRelatorios();
   ligarEventosConfig();
+  ligarEventosScanner();
 
   document.getElementById('btnSairHeader').addEventListener('click', () => {
     if(confirm('Sair do aplicativo? Será necessário digitar o PIN novamente para entrar.')){

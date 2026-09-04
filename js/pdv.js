@@ -304,6 +304,16 @@ function ligarEventosPdv(){
     }
   });
 
+  document.getElementById('btnAbrirScanner').addEventListener('click', () => {
+    abrirScannerCamera(codigo => {
+      busca.value = codigo;
+      if(!tentarLeituraExata(codigo)){
+        renderSugestoesPdv();
+        setPdvStatus(`Código "${codigo}" lido, mas nenhum produto com esse SKU foi encontrado.`, true);
+      }
+    });
+  });
+
   document.getElementById('pdvSugestoes').addEventListener('click', e => {
     const item = e.target.closest('.sugestao-item');
     if(!item) return;

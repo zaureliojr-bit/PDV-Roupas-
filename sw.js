@@ -23,6 +23,7 @@ const APP_SHELL = [
   './js/estoque.js',
   './js/relatorios.js',
   './js/config.js',
+  './js/scanner.js',
   './js/db.js',
   './js/firebase-config.js',
   './js/app.js',
