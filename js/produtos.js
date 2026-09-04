@@ -196,6 +196,12 @@ function ligarEventosProdutos(){
 
   document.getElementById('btnNovoProduto').addEventListener('click', () => abrirFormProduto(null));
   document.getElementById('btnCancelarProduto').addEventListener('click', fecharFormProduto);
+
+  document.getElementById('btnScannerSku').addEventListener('click', () => {
+    abrirScannerCamera(codigo => {
+      document.getElementById('pSku').value = codigo;
+    });
+  });
   document.getElementById('produtoBusca').addEventListener('input', renderProdutos);
 
   document.getElementById('btnAbrirLote').addEventListener('click', abrirLote);

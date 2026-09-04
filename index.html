@@ -109,7 +109,12 @@
         <input type="hidden" id="produtoId" />
         <div class="form-grid">
           <label>Nome<input type="text" id="pNome" required /></label>
-          <label>Código/SKU<input type="text" id="pSku" /></label>
+          <label>Código/SKU
+            <div class="add-row">
+              <input type="text" id="pSku" />
+              <button type="button" class="btn-add" id="btnScannerSku" aria-label="Ler código de barras com a câmera">📷</button>
+            </div>
+          </label>
           <label>Categoria<input type="text" id="pCategoria" /></label>
           <label>Marca<input type="text" id="pMarca" /></label>
           <label>Fornecedor<input type="text" id="pFornecedor" /></label>
