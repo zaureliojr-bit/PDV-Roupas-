@@ -170,11 +170,11 @@ function vendasDoCliente(clienteId){
 }
 
 function totalCompradoCliente(clienteId){
-  return vendasDoCliente(clienteId).reduce((soma, v) => soma + v.total, 0);
+  return vendasAtivas(vendasDoCliente(clienteId)).reduce((soma, v) => soma + v.total, 0);
 }
 
 function ultimaCompraCliente(clienteId){
-  const lista = vendasDoCliente(clienteId);
+  const lista = vendasAtivas(vendasDoCliente(clienteId));
   return lista.length ? lista[0].data : null;
 }
 
@@ -287,7 +287,37 @@ async function finalizarVenda({ itens, desconto, formaPagamento, clienteId, vend
   return { id: ref.id, ...venda };
 }
 
+// Cancela uma venda: devolve as quantidades ao estoque (uma movimentação de
+// devolução por item, pra manter o histórico rastreável) e marca a venda
+// como cancelada — ela some das somas de faturamento/lucro/etc., mas
+// continua aparecendo no histórico (marcada) pra não sumir nenhum registro.
+async function cancelarVenda(vendaId){
+  const venda = buscarVenda(vendaId);
+  if(!venda) throw new Error('VENDA_INEXISTENTE');
+  if(venda.cancelada) return venda;
+
+  for(const item of venda.itens){
+    await registrarMovimentacao({
+      produtoId: item.produtoId,
+      variacaoId: item.variacaoId,
+      tipo: 'devolucao',
+      delta: item.qtd,
+      obs: 'Estorno automático — venda cancelada',
+      vendaId
+    });
+  }
+
+  const canceladaEm = new Date().toISOString();
+  await db.collection('vendas').doc(vendaId).update({ cancelada: true, canceladaEm });
+
+  return { ...venda, cancelada: true, canceladaEm };
+}
+
 // ---------------- Consultas agregadas ----------------
+
+function vendasAtivas(listaVendas){
+  return listaVendas.filter(v => !v.cancelada);
+}
 
 function inicioDoDia(data){
   const d = new Date(data);
@@ -309,11 +339,11 @@ function vendasDeHoje(){
 }
 
 function faturamentoTotal(listaVendas){
-  return listaVendas.reduce((soma, v) => soma + v.total, 0);
+  return vendasAtivas(listaVendas).reduce((soma, v) => soma + v.total, 0);
 }
 
 function lucroEstimado(listaVendas){
-  return listaVendas.reduce((soma, v) => {
+  return vendasAtivas(listaVendas).reduce((soma, v) => {
     const lucroVenda = v.itens.reduce((s, item) => s + (item.precoUnit - (item.custoUnit || 0)) * item.qtd, 0);
     return soma + lucroVenda;
   }, 0);
@@ -321,7 +351,7 @@ function lucroEstimado(listaVendas){
 
 function produtosMaisVendidos(listaVendas, limite){
   const contagem = new Map();
-  listaVendas.forEach(v => {
+  vendasAtivas(listaVendas).forEach(v => {
     v.itens.forEach(item => {
       const chave = item.produtoId;
       const atual = contagem.get(chave) || { produtoId: item.produtoId, nome: item.nome, qtd: 0, total: 0 };
@@ -338,7 +368,7 @@ function produtosParados(diasSemVenda){
   const limite = new Date();
   limite.setDate(limite.getDate() - diasSemVenda);
   const vendidosRecentemente = new Set();
-  vendas.forEach(v => {
+  vendasAtivas(vendas).forEach(v => {
     if(new Date(v.data) >= limite){
       v.itens.forEach(item => vendidosRecentemente.add(item.produtoId));
     }
@@ -348,7 +378,7 @@ function produtosParados(diasSemVenda){
 
 function vendasPorFormaPagamento(listaVendas){
   const mapa = new Map();
-  listaVendas.forEach(v => {
+  vendasAtivas(listaVendas).forEach(v => {
     const atual = mapa.get(v.formaPagamento) || { formaPagamento: v.formaPagamento, qtd: 0, total: 0 };
     atual.qtd += 1;
     atual.total += v.total;
@@ -359,7 +389,7 @@ function vendasPorFormaPagamento(listaVendas){
 
 function vendasPorVendedor(listaVendas){
   const mapa = new Map();
-  listaVendas.forEach(v => {
+  vendasAtivas(listaVendas).forEach(v => {
     const nome = v.vendedor || 'Não informado';
     const atual = mapa.get(nome) || { vendedor: nome, qtd: 0, total: 0 };
     atual.qtd += 1;
@@ -370,13 +400,14 @@ function vendasPorVendedor(listaVendas){
 }
 
 function ticketMedio(listaVendas){
-  if(!listaVendas.length) return 0;
-  return faturamentoTotal(listaVendas) / listaVendas.length;
+  const ativas = vendasAtivas(listaVendas);
+  if(!ativas.length) return 0;
+  return faturamentoTotal(ativas) / ativas.length;
 }
 
 function vendasPorDia(listaVendas){
   const mapa = new Map();
-  listaVendas.forEach(v => {
+  vendasAtivas(listaVendas).forEach(v => {
     const dia = v.data.slice(0, 10);
     const atual = mapa.get(dia) || { dia, qtd: 0, total: 0 };
     atual.qtd += 1;

@@ -4,6 +4,7 @@
 // estoque (feita por `finalizarVenda` em store.js).
 
 let carrinhoPdv = [];
+let ultimoComprovante = null;
 
 function itemCarrinho(produtoId, variacaoId){
   return carrinhoPdv.find(i => i.produtoId === produtoId && i.variacaoId === variacaoId) || null;
@@ -36,6 +37,7 @@ function adicionarAoCarrinho(produto, variacao){
   document.getElementById('pdvBusca').value = '';
   document.getElementById('pdvSugestoes').innerHTML = '';
   setPdvStatus('');
+  esconderComprovante();
   renderCarrinho();
 }
 
@@ -194,11 +196,51 @@ function renderPdv(){
   renderCarrinho();
 }
 
+function digitosTelefone(texto){
+  return (texto || '').replace(/\D/g, '');
+}
+
+function gerarComprovanteTexto(venda, clienteNome){
+  const linhasItens = venda.itens.map(item => {
+    const variacao = item.variacaoDesc && item.variacaoDesc !== '-' ? ` (${item.variacaoDesc})` : '';
+    return `${item.qtd}x ${item.nome}${variacao} — ${formatarMoeda(item.qtd * item.precoUnit)}`;
+  }).join('\n');
+
+  let texto = `*Comprovante de venda*\n${formatarData(venda.data)}\n`;
+  if(clienteNome) texto += `Cliente: ${clienteNome}\n`;
+  texto += `\n${linhasItens}\n\nSubtotal: ${formatarMoeda(venda.subtotal)}\n`;
+  if(venda.desconto) texto += `Desconto: ${formatarMoeda(venda.desconto)}\n`;
+  texto += `*Total: ${formatarMoeda(venda.total)}*\n\nForma de pagamento: ${venda.formaPagamento}\n`;
+  if(venda.vendedor) texto += `Vendedor(a): ${venda.vendedor}\n`;
+  texto += `\nObrigado pela preferência! 💛`;
+  return texto;
+}
+
+function mostrarComprovante(venda, clienteNome, clienteTelefone){
+  ultimoComprovante = { venda, clienteNome, clienteTelefone };
+  document.getElementById('pdvComprovanteAcao').style.display = 'block';
+}
+
+function esconderComprovante(){
+  ultimoComprovante = null;
+  document.getElementById('pdvComprovanteAcao').style.display = 'none';
+}
+
+function enviarComprovanteWhatsapp(){
+  if(!ultimoComprovante) return;
+  const { venda, clienteNome, clienteTelefone } = ultimoComprovante;
+  const texto = gerarComprovanteTexto(venda, clienteNome);
+  const digitos = digitosTelefone(clienteTelefone);
+  const numero = digitos ? `55${digitos}` : '';
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`, '_blank');
+}
+
 async function finalizarVendaPdv(){
   if(!carrinhoPdv.length) return;
   const { desconto } = calcularTotais();
   const formaPagamento = document.getElementById('pdvPagamento').value;
   const clienteId = clienteSelecionadoId;
+  const clienteAtual = clienteId ? buscarCliente(clienteId) : null;
   const vendedorId = document.getElementById('pdvVendedor').value;
   const vendedor = vendedorId ? buscarVendedor(vendedorId)?.nome || '' : '';
 
@@ -222,6 +264,7 @@ async function finalizarVendaPdv(){
     document.getElementById('pdvDesconto').value = '';
     selecionarClientePdv(null);
     renderCarrinho();
+    mostrarComprovante(venda, clienteAtual?.nome || null, clienteAtual?.telefone || null);
     setPdvStatus(`Venda finalizada! Total: ${formatarMoeda(venda.total)}`);
   } catch(err){
     setPdvStatus('Erro ao finalizar venda: ' + err.message, true);
@@ -231,6 +274,7 @@ async function finalizarVendaPdv(){
 
 function ligarEventosPdv(){
   aplicarMascaraMoeda(document.getElementById('pdvDesconto'));
+  document.getElementById('btnComprovanteWhats').addEventListener('click', enviarComprovanteWhatsapp);
 
   const clienteBusca = document.getElementById('pdvClienteBusca');
   clienteBusca.addEventListener('input', () => {

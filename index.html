@@ -177,6 +177,9 @@
       <button class="btn-primary" id="btnFinalizarVenda" disabled>Finalizar venda</button>
       <button class="btn-secondary" id="btnLimparCarrinho">Limpar carrinho</button>
       <div class="status" id="pdvStatus" role="status" aria-live="polite"></div>
+      <div id="pdvComprovanteAcao" style="display:none;">
+        <button type="button" class="btn-primary" id="btnComprovanteWhats" style="background:#25D366;">📤 Enviar comprovante no WhatsApp</button>
+      </div>
     </div>
   </section>
 
@@ -289,6 +292,12 @@
         </select>
       </div>
       <div class="grid-cards" id="relResumo"></div>
+    </div>
+
+    <div class="card">
+      <h2>Vendas recentes</h2>
+      <p class="hint">Mostra as últimas 20 vendas do período selecionado. Cancelar devolve o estoque automaticamente.</p>
+      <div id="relVendasRecentes"></div>
     </div>
 
     <div class="card">

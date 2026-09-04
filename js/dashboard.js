@@ -13,7 +13,7 @@ function renderDashboard(){
 
   document.getElementById('dashCards').innerHTML = [
     statCardHtml('💰 Vendas do dia', formatarMoeda(totalHoje)),
-    statCardHtml('🛒 Qtd. de vendas hoje', hoje.length),
+    statCardHtml('🛒 Qtd. de vendas hoje', vendasAtivas(hoje).length),
     statCardHtml('📦 Unidades em estoque', unidadesEmEstoque),
     statCardHtml('⚠️ Estoque baixo', `${comEstoqueBaixo} de ${totalProdutos}`, comEstoqueBaixo ? 'alert' : 'ok')
   ].join('');
@@ -32,7 +32,7 @@ function renderFaturamentoPeriodo(){
   document.getElementById('dashFaturamento').innerHTML = `
     <div class="resumo" style="border-top:none; padding-top:0;">
       <span>Faturamento: <b>${formatarMoeda(faturamentoTotal(lista))}</b></span>
-      <span>Vendas: <b>${lista.length}</b></span>
+      <span>Vendas: <b>${vendasAtivas(lista).length}</b></span>
       <span>Ticket médio: <b>${formatarMoeda(ticketMedio(lista))}</b></span>
     </div>`;
 }

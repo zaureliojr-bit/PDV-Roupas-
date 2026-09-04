@@ -60,6 +60,9 @@ function renderClientes(){
 
 function itemVendaHtml(venda){
   const itensTxt = venda.itens.map(i => `${i.qtd}x ${i.nome}`).join(', ');
+  if(venda.cancelada){
+    return `<li style="opacity:.5;"><span style="text-decoration:line-through;">${formatarData(venda.data)} — ${escapeHtml(itensTxt)}</span><span>cancelada</span></li>`;
+  }
   return `<li><span>${formatarData(venda.data)} — ${escapeHtml(itensTxt)}</span><span class="destaque">${formatarMoeda(venda.total)}</span></li>`;
 }
 
